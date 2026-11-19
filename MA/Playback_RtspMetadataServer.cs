@@ -79,7 +79,7 @@ namespace MachiningMonitor.Broadcast {
 
         internal sealed class Client {
             readonly MetadataRtspServer server; readonly TcpClient tcp; readonly NetworkStream stream; readonly object writeGate = new object();
-            string session = Guid.NewGuid().ToString("N"); bool closed;
+            string session = Guid.NewGuid().ToString("N"); bool closed; bool authorized;
             public bool IsPublisher; public bool IsReader; public int AudioChannel = -1; public int MetadataChannel = -1;
             public Client(MetadataRtspServer server, TcpClient tcp) { this.server = server; this.tcp = tcp; stream = tcp.GetStream(); }
             public void Close() { if (closed) return; closed = true; try { tcp.Close(); } catch { } server.Remove(this); }
@@ -96,10 +96,10 @@ namespace MachiningMonitor.Broadcast {
                 var cseq = r.Headers.ContainsKey("CSeq") ? r.Headers["CSeq"] : "1";
                 if (r.Method == "OPTIONS") { Send("RTSP/1.0 200 OK\r\nCSeq: "+cseq+"\r\nPublic: OPTIONS, DESCRIBE, ANNOUNCE, SETUP, RECORD, PLAY, TEARDOWN\r\n\r\n"); return; }
                 if (r.Method == "ANNOUNCE") { var remote=((IPEndPoint)tcp.Client.RemoteEndPoint).Address; if(!IPAddress.IsLoopback(remote)){Send("RTSP/1.0 403 Forbidden\r\nCSeq: "+cseq+"\r\n\r\n");return;} IsPublisher=true; server.AnnouncedSdp=r.Body; server.Publishing=true; Send("RTSP/1.0 200 OK\r\nCSeq: "+cseq+"\r\n\r\n"); return; }
-                if (r.Method == "DESCRIBE") { if(!server.Authorize(r.Headers.ContainsKey("Authorization")?r.Headers["Authorization"]:null)){SendAuth(cseq);return;} IsReader=true; var sdp=BuildSdp(server.AnnouncedSdp); Send("RTSP/1.0 200 OK\r\nCSeq: "+cseq+"\r\nContent-Base: rtsp://"+server.address+":"+server.port+"/audio/\r\nContent-Type: application/sdp\r\nContent-Length: "+Encoding.UTF8.GetByteCount(sdp)+"\r\n\r\n"+sdp); return; }
-                if (r.Method == "SETUP") { if(!server.Authorize(r.Headers.ContainsKey("Authorization")?r.Headers["Authorization"]:null)){SendAuth(cseq);return;} var metadata=r.Url.IndexOf("trackID=1",StringComparison.OrdinalIgnoreCase)>=0; if(metadata) MetadataChannel=2; else AudioChannel=0; var channel=metadata?"2-3":"0-1"; Send("RTSP/1.0 200 OK\r\nCSeq: "+cseq+"\r\nSession: "+session+"\r\nTransport: RTP/AVP/TCP;unicast;interleaved="+channel+"\r\n\r\n"); return; }
+                if (r.Method == "DESCRIBE") { if(!server.Authorize(r.Headers.ContainsKey("Authorization")?r.Headers["Authorization"]:null)){SendAuth(cseq);return;} authorized=true; IsReader=true; var sdp=BuildSdp(server.AnnouncedSdp); Send("RTSP/1.0 200 OK\r\nCSeq: "+cseq+"\r\nContent-Base: rtsp://"+server.address+":"+server.port+"/audio/\r\nContent-Type: application/sdp\r\nContent-Length: "+Encoding.UTF8.GetByteCount(sdp)+"\r\n\r\n"+sdp); return; }
+                if (r.Method == "SETUP") { if(!IsPublisher && !authorized && !server.Authorize(r.Headers.ContainsKey("Authorization")?r.Headers["Authorization"]:null)){SendAuth(cseq);return;} if(!IsPublisher)authorized=true; var metadata=r.Url.IndexOf("trackID=1",StringComparison.OrdinalIgnoreCase)>=0; if(metadata) MetadataChannel=2; else AudioChannel=0; var channel=metadata?"2-3":"0-1"; Send("RTSP/1.0 200 OK\r\nCSeq: "+cseq+"\r\nSession: "+session+"\r\nTransport: RTP/AVP/TCP;unicast;interleaved="+channel+"\r\n\r\n"); return; }
                 if (r.Method == "RECORD") { Send("RTSP/1.0 200 OK\r\nCSeq: "+cseq+"\r\nSession: "+session+"\r\n\r\n"); return; }
-                if (r.Method == "PLAY") { if(!server.Authorize(r.Headers.ContainsKey("Authorization")?r.Headers["Authorization"]:null)){SendAuth(cseq);return;} Send("RTSP/1.0 200 OK\r\nCSeq: "+cseq+"\r\nSession: "+session+"\r\nRTP-Info: url=trackID=0;seq=0;rtptime=0,url=trackID=1;seq=0;rtptime=0\r\n\r\n"); return; }
+                if (r.Method == "PLAY") { if(!server.Authorize(r.Headers.ContainsKey("Authorization")?r.Headers["Authorization"]:null) && !authorized){SendAuth(cseq);return;} authorized=true; Send("RTSP/1.0 200 OK\r\nCSeq: "+cseq+"\r\nSession: "+session+"\r\nRTP-Info: url=trackID=0;seq=0;rtptime=0,url=trackID=1;seq=0;rtptime=0\r\n\r\n"); return; }
                 if (r.Method == "TEARDOWN") { Send("RTSP/1.0 200 OK\r\nCSeq: "+cseq+"\r\nSession: "+session+"\r\n\r\n"); Close(); return; }
                 Send("RTSP/1.0 200 OK\r\nCSeq: "+cseq+"\r\n\r\n");
             }

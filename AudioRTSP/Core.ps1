@@ -199,7 +199,8 @@ function Get-TransmissionState($Session) {
         if(-not $Session.CustomRtspServer.Listening){return 'Falha'}
         if($Session.Encoder){$Session.Encoder.Refresh();if($Session.Encoder.HasExited){return 'Falha'}}
         if($Session.CustomRtspServer.Publishing){$Session.Ready=$true;return 'A transmitir'}
-        if(((Get-Date)-$Session.Started).TotalSeconds -gt 20){return 'Falha'}
+        # The playback broadcaster starts before a recording is selected. FFmpeg
+        # waits for the first PCM block, so lack of ANNOUNCE is expected here.
         return 'A iniciar'
     }
     foreach($p in @($Session.Server,$Session.Encoder)) {

@@ -92,7 +92,11 @@ function Update-ApplicationBroadcast {
             if($session.Capture.CaptureReady -or $session.Capture.TargetProcess -eq 0){$session.CaptureWaitAt=$now}
             if(($now-$session.CaptureWaitAt).TotalSeconds -gt 10){throw 'O Windows não iniciou a captura do áudio do leitor.'}
             $status=& $runtime.Engine {param($s) Get-TransmissionState $s} $session.Transmission
-            if($status -eq 'Falha'){throw 'O servidor ou codificador RTSP deixou de responder.'}
+            if($status -eq 'Falha'){
+                $detail=$session.Transmission.Encoder.AudioOutput.LastError
+                if([string]::IsNullOrWhiteSpace($detail)){$detail='sem diagnóstico do codificador'}
+                throw ('O servidor ou codificador RTSP deixou de responder. '+$detail)
+            }
             Update-PlaybackStreamMetadata $runtime
         }
     }catch{

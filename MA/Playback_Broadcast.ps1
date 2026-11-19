@@ -31,7 +31,8 @@ function Initialize-PlaybackBroadcast {
         $runtime.Engine=New-Module -Name PlaybackAudioRTSP -ArgumentList $core -ScriptBlock {
             param($CorePath)
             . $CorePath
-            if(-not (Get-Command Start-Transmission).Parameters.ContainsKey('PcmInput')){throw 'Atualize também AudioRTSP/Core.ps1 com a versão incluída neste pacote.'}
+            $parameters=(Get-Command Start-Transmission).Parameters
+            if(-not $parameters.ContainsKey('PcmInput') -or -not $parameters.ContainsKey('MetadataInput')){throw 'Atualize também AudioRTSP/Core.ps1 com a versão incluída neste pacote.'}
             Export-ModuleMember -Function *
         }
     }
@@ -43,7 +44,7 @@ function New-ApplicationTransmission($Config){
     $runtime=Get-ApplicationBroadcast;$transmission=$null;$capture=$null
     $access=[pscustomobject]@{Enabled=$Config.AuthEnabled;Username=$Config.Username;PasswordHash=$Config.PasswordHash}
     try{
-        $transmission=& $runtime.Engine {param($ip,$port,$auth,$channels,$bitrate) Start-Transmission -PcmInput -BindAddress $ip -Port $port -Access $auth -Channels $channels -Bitrate $bitrate} $Config.Address $Config.Port $access $Config.Channels $Config.Bitrate
+        $transmission=& $runtime.Engine {param($ip,$port,$auth,$channels,$bitrate) Start-Transmission -PcmInput -MetadataInput -BindAddress $ip -Port $port -Access $auth -Channels $channels -Bitrate $bitrate} $Config.Address $Config.Port $access $Config.Channels $Config.Bitrate
         $capture=New-Object MachiningMonitor.Broadcast.ProcessAudio($transmission.Encoder.StandardInput.BaseStream)
         if($runtime.Player -and -not $runtime.Player.HasExited){$capture.SetProcess($runtime.Player.Id)}
         return @{Transmission=$transmission;Capture=$capture;LastFrames=0L;ProgressAt=[datetime]::UtcNow;CaptureWaitAt=[datetime]::UtcNow}

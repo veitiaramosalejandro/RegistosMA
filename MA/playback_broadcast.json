@@ -1,0 +1,11 @@
+﻿{
+    "Version":  2,
+    "Enabled":  true,
+    "Address":  "127.0.0.1",
+    "Port":  8555,
+    "Channels":  2,
+    "Bitrate":  192,
+    "AuthEnabled":  true,
+    "Username":  "admin",
+    "PasswordHash":  "sha256:0j5bqnQfJTh+r5eLpY2/qBJ2b3luXT845IDJIqHYWqY="
+}

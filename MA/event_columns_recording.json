@@ -1,0 +1,13 @@
+{
+    "Version":  3,
+    "Widths":  [
+                   90,
+                   100,
+                   70,
+                   140,
+                   150,
+                   300,
+                   160
+               ],
+    "ObservationsMinimum":  80
+}

@@ -1,0 +1,11 @@
+{
+  "default": "idle",
+  "activities": [
+    { "id": "unknown", "label_key": "Unknown" },
+    { "id": "idle", "label_key": "Idle" },
+    { "id": "warm_up", "label_key": "Warm-up" },
+    { "id": "machining", "label_key": "Machining" },
+    { "id": "tool_change", "label_key": "Tool change" },
+    { "id": "tool_measurement", "label_key": "Tool measurement" }
+  ]
+}

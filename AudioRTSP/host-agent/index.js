@@ -1,0 +1,16 @@
+import http from 'node:http';
+import { spawn } from 'node:child_process';
+
+const port = Number(process.env.AUDIO_AGENT_PORT || 8090);
+const ffmpeg = process.env.FFMPEG_BIN || 'ffmpeg.exe';
+const token = process.env.AUDIO_AGENT_TOKEN || '';
+let processState = null;
+
+function authorized(req) { return !token || req.headers.authorization === `Bearer ${token}`; }
+function json(res, status, value) { const body = JSON.stringify(value); res.writeHead(status, { 'content-type': 'application/json', 'content-length': Buffer.byteLength(body) }); res.end(body); }
+function body(req) { return new Promise((resolve, reject) => { let raw = ''; req.on('data', chunk => { raw += chunk; if (raw.length > 32768) req.destroy(); }); req.on('end', () => { try { resolve(raw ? JSON.parse(raw) : {}); } catch { reject(new Error('JSON inválido.')); } }); req.on('error', reject); }); }
+function listDevices() { return new Promise((resolve, reject) => { const child = spawn(ffmpeg, ['-hide_banner', '-list_devices', 'true', '-f', 'dshow', '-i', 'dummy'], { windowsHide: true }); let output = ''; child.stderr.on('data', chunk => { output += chunk.toString(); }); child.stdout.on('data', chunk => { output += chunk.toString(); }); child.on('error', reject); child.on('close', () => { const devices = []; let current = null; for (const line of output.split(/\r?\n/)) { const match = line.match(/"(.*)" \(audio\)/); if (match) { current = { Id: match[1], Name: match[1] }; devices.push(current); } else if (current && line.includes('Alternative name')) { const alternative = line.match(/"(.*)"/); if (alternative) current.Id = alternative[1]; } else if (/\(video\)/.test(line)) current = null; } resolve(devices); }); }); }
+function stop() { if (processState?.exitCode === null) processState.kill('SIGTERM'); processState = null; }
+async function route(req, res) { if (!authorized(req)) return json(res, 401, { error: 'No autorizado.' }); if (req.method === 'GET' && req.url === '/devices') return json(res, 200, { devices: await listDevices() }); if (req.method === 'GET' && req.url === '/health') return json(res, 200, { status: 'ok', running: Boolean(processState) }); if (req.method === 'POST' && req.url === '/stop') { stop(); return json(res, 200, { state: 'stopped' }); } if (req.method === 'POST' && req.url === '/start') { const input = await body(req); if (!input.device || !input.targetUrl) return json(res, 400, { error: 'device y targetUrl son obligatorios.' }); stop(); const args = ['-hide_banner', '-loglevel', 'error', '-nostdin', '-y', '-thread_queue_size', '512', '-f', 'dshow', '-audio_buffer_size', '50', '-i', `audio=${input.device}`, '-vn', '-c:a', 'aac', '-b:a', `${input.bitrate || 192}k`, '-ar', '48000', '-ac', String(input.channels || 2), '-f', 'rtsp', '-rtsp_transport', 'tcp', input.targetUrl]; processState = spawn(ffmpeg, args, { windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'] }); processState.on('exit', () => { processState = null; }); return json(res, 200, { state: 'starting' }); } return json(res, 404, { error: 'Ruta no encontrada.' }); }
+http.createServer((req, res) => route(req, res).catch(error => json(res, 400, { error: error.message }))).listen(port, '0.0.0.0', () => console.log(`AudioRTSP host agent escuchando en ${port}`));
+process.on('SIGINT', stop); process.on('SIGTERM', stop);

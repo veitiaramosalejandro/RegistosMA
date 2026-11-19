@@ -1,0 +1,72 @@
+{
+  "AudioVolumePercent": 100,
+  "PreviewVideo": true,
+  "RequirePasswordForDeletion": true,
+  "ExtractedRecordingsPath": "C:\\Users\\candido.silva\\Desktop\\Registos MA\\Amostras PMM",
+  "AudioDevice": "@device_cm_{33D9A762-90C8-11D0-BD43-00A0C911CE86}\\wave_{5CE146B9-A1F8-4412-A9BE-80299A3743F4}",
+  "AudioDeviceName": "Conjunto de microfones (2- Realtek(R) Audio)",
+  "LastPlaybackAudioSource": "S",
+  "LastAudioOffsetMs": 0,
+  "AudioSourceType": "RTSP",
+  "SegmentMinutes": 60,
+  "LocalAudioGainDb": 0,
+  "Cameras": [
+    {
+      "Name": "Câmara 1 - DMG MORI (PMM)",
+      "Url": "rtsp://192.168.7.51:554/H264?ch=1\u0026subtype=0",
+      "Enabled": false,
+      "Username": "admin",
+      "PasswordProtected": "dpapi:AQAAANCMnd8BFdERjHoAwE/Cl+sBAAAAmkEqixybeUW0DDTJWlw/NwAAAAACAAAAAAAQZgAAAAEAACAAAAB/LwK0orgcUJgQlYjrdiMlbpIOu6TcSWA46zbDdiaqqAAAAAAOgAAAAAIAACAAAADodG1WC/bnFHwMvtBtgTlGUEqQNDzqPU1inhYooDlNeBAAAAAXcl0qZKLifpH8Q4YmTDmXQAAAAKHh62Yw4E+8U2Vm/kIUNQFFdHng5sF9UVTKS6NLBKIMwcp0oqAWVTV0rNTtiIftS+nMlfUXFPWL6QDuUbO4McM=",
+      "AudioSyncMs": 900
+    },
+    {
+      "Name": "Câmara 1 -  CNC HARTFORD (ROBOTEA)",
+      "Url": "rtsp://172.16.14.16:554/cam/realmonitor?channel=1\u0026subtype=0",
+      "Enabled": true,
+      "Username": "admin",
+      "PasswordProtected": "dpapi:AQAAANCMnd8BFdERjHoAwE/Cl+sBAAAAmkEqixybeUW0DDTJWlw/NwAAAAACAAAAAAAQZgAAAAEAACAAAAB4TNtBExrYpJHZG0BmQn+hcvuMexsTG1kQ8wLVRIVfigAAAAAOgAAAAAIAACAAAACwlDzblEJqRHWF0eyTFOnQbdjdvhEKLEdspeYcK8nAIhAAAAChXtU7abw26yNgt2eV6De7QAAAAHVKLgSTJtOa5P5JPL8z3OACtjTyYYTXXzYEnXXMEsS0g4uy5y4d4dJLtQIvb0ovNMGYUrmsSwnLH9X/PA+Na10=",
+      "AudioSyncMs": 1000
+    }
+  ],
+  "AudioRtspPasswordProtected": "dpapi:AQAAANCMnd8BFdERjHoAwE/Cl+sBAAAAmkEqixybeUW0DDTJWlw/NwAAAAACAAAAAAAQZgAAAAEAACAAAAAD8KRCJlc0/yTyob3r0jmCsrJv4lSi6k87jwEwU/cueAAAAAAOgAAAAAIAACAAAAATADSut+7IHYFWzfmA4UDQt8SHQoPsgEuH0C04wxMIcRAAAABKFXtbV0kQmHHTUslQkeJ2QAAAAF0D28qDA/3U+sztxKEIkdoZXetZy3lilE8ju5tbwmJXKWzfrDTGWSK36EA6eePLYkTrhJHwqgJQvTPmjE6Ldik=",
+  "AudioRtspProfiles": [
+    {
+      "Name": "Áudio 1 - DMG MORI (PMM)",
+      "AudioRtspUrl": "rtsp://192.168.7.41:8554/audio",
+      "AudioRtspUsername": "admin",
+      "AudioRtspPasswordProtected": "dpapi:AQAAANCMnd8BFdERjHoAwE/Cl+sBAAAAmkEqixybeUW0DDTJWlw/NwAAAAACAAAAAAAQZgAAAAEAACAAAAD2VKES1FHfLw+49Tbb9X4ObDtxtewQm3XoMntY/eYbSAAAAAAOgAAAAAIAACAAAAAqIeNuR4eFgu8ZXUuPhJQ3uemedJ+gvZC89aQE+bsh0xAAAADjxWXiBVBaksoYnWwm8CJtQAAAAAX8Wl88H7d6RUVWunkdK9h8jiwqIpBjoJChbgCZzlkJsN9wc02nfaNxL5cdyBXhUzMto1k0Y4gkLs1CEVV3jL8=",
+      "GainDb": 0
+    },
+    {
+      "Name": "Áudio do PC por RTSP (PMM)",
+      "AudioRtspUrl": "rtsp://192.168.7.161:8554/audio",
+      "AudioRtspUsername": "admin",
+      "AudioRtspPasswordProtected": "dpapi:AQAAANCMnd8BFdERjHoAwE/Cl+sBAAAAmkEqixybeUW0DDTJWlw/NwAAAAACAAAAAAAQZgAAAAEAACAAAABZ1wEnAa8bDdAiEgFp2WrZ41OiYlxhyLWbF41v0nu6wAAAAAAOgAAAAAIAACAAAADS5mt7e6pmUBaHeW+Y9utRFtQYqp5ooFDcdlntVh8pLxAAAADiS43ydBakViOX1YBdIC0jQAAAAME4OqeW/QD04yQvzb6hEfjLq8pdUWlFZpuRgNvujUX1BtLsVcueNeJk/NcDaxjLhgojbVTwE8W/ZktNy3NJm28=",
+      "GainDb": 0
+    },
+    {
+      "Name": "Áudio do PC por RTSP (ROBOTEA)",
+      "AudioRtspUrl": "rtsp://172.16.11.15:8554/audio",
+      "AudioRtspUsername": "admin",
+      "AudioRtspPasswordProtected": "dpapi:AQAAANCMnd8BFdERjHoAwE/Cl+sBAAAAmkEqixybeUW0DDTJWlw/NwAAAAACAAAAAAAQZgAAAAEAACAAAAAD8KRCJlc0/yTyob3r0jmCsrJv4lSi6k87jwEwU/cueAAAAAAOgAAAAAIAACAAAAATADSut+7IHYFWzfmA4UDQt8SHQoPsgEuH0C04wxMIcRAAAABKFXtbV0kQmHHTUslQkeJ2QAAAAF0D28qDA/3U+sztxKEIkdoZXetZy3lilE8ju5tbwmJXKWzfrDTGWSK36EA6eePLYkTrhJHwqgJQvTPmjE6Ldik=",
+      "GainDb": 0
+    },
+    {
+      "Name": "Áudio do PC por RTPS (CASA)",
+      "AudioRtspUrl": "rtsp://192.168.99.27:8554/audio",
+      "AudioRtspUsername": "admin",
+      "AudioRtspPasswordProtected": "dpapi:AQAAANCMnd8BFdERjHoAwE/Cl+sBAAAAmkEqixybeUW0DDTJWlw/NwAAAAACAAAAAAAQZgAAAAEAACAAAAAecgH0s9lNV+y7hK1icE916aN33vCGJZuvgUvcmDkQzwAAAAAOgAAAAAIAACAAAADDxiRxv8YNu/Pz4s2P0zqJI2TXD/FNNyDSNElsOOigtxAAAACfEyBkSw0Fd2wQSm6OdaSrQAAAAL6tZwmb7cUidZKQOPBoHqshBEWggrI4uOixvWi6KEGrW598o+k/Jphz1PyzGS/pN4MJSyH3Ai6GKLm5g8ho/QE=",
+      "GainDb": 0
+    }
+  ],
+  "AudioRtspUsername": "admin",
+  "CameraUrl": "rtsp://172.16.14.16:554/cam/realmonitor?channel=1\u0026subtype=0",
+  "VideoPreset": "veryfast",
+  "AudioRtspGainDb": 0,
+  "VideoCrf": 30,
+  "AudioRtspUrl": "rtsp://172.16.11.15:8554/audio",
+  "LastSpectrumChannel": "R",
+  "LastWaveformGain": 20,
+  "Language": "pt",
+  "RecordingsPath": "D:\\proyecto\\source\\repos\\MachiningAssistant\\Dataset\\Data"
+}

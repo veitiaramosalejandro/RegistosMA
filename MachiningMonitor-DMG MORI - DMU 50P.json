@@ -1,0 +1,73 @@
+{
+  "format": "MachiningMonitor.RecordingConfiguration",
+  "formatVersion": 1,
+  "machineId": "7d084d9e-ecd6-40e8-b14b-ee11607e564e",
+  "exportedAtUtc": "2026-11-12T17:10:54.3276894+00:00",
+  "configuration": {
+    "machineName": "DMG MORI - DMU 50P",
+    "enabled": true,
+    "revision": 0,
+    "recordingsDirectory": "D:\\Trabajo\\Registos MA\\Amostras PMM",
+    "mode": "VIDEO_AUDIO",
+    "allowAudioOnlyFallback": true,
+    "stopOnlyWhenAllDevicesUnavailable": true,
+    "language": "pt",
+    "audioSourceType": "RTSP",
+    "audioDevice": "@device_cm_{33D9A762-90C8-11D0-BD43-00A0C911CE86}\\wave_{5CE146B9-A1F8-4412-A9BE-80299A3743F4}",
+    "audioDeviceName": "Conjunto de microfones (2- Realtek(R) Audio)",
+    "audioRtspUrl": "rtsp://172.16.10.136:8554/audio",
+    "audioRtspUsername": "admin",
+    "audioRtspGainDb": 0,
+    "audioRtspProfiles": [
+      {
+        "name": "Áudio 1 - DMG MORI (PMM)",
+        "audioRtspUrl": "rtsp://192.168.7.41:8554/audio",
+        "audioRtspUsername": "admin",
+        "gainDb": 0
+      },
+      {
+        "name": "Áudio 2 - PC (rede ROBOTEA wifi) ",
+        "audioRtspUrl": "rtsp://172.16.10.136:8554/audio",
+        "audioRtspUsername": "admin",
+        "gainDb": 0
+      },
+      {
+        "name": "Áudio 3 - PC (rede ROBOTEA ethernet) ",
+        "audioRtspUrl": "rtsp://172.16.10.137:8554/audio",
+        "audioRtspUsername": "admin",
+        "gainDb": 0
+      }
+    ],
+    "localAudioGainDb": 0,
+    "audioVolumePercent": 100,
+    "audioBufferMilliseconds": 50,
+    "segmentMinutes": 60,
+    "videoCrf": 30,
+    "videoPreset": "veryfast",
+    "cameras": [
+      {
+        "name": "Câmara 1 - DMG MORI (PMM)",
+        "url": "rtsp://192.168.7.51:554/H264?ch=1&subtype=0",
+        "enabled": false,
+        "username": "admin",
+        "audioSyncMs": 0
+      },
+      {
+        "name": "Câmara 1 -  CNC HARTFORD (ROBOTEA)",
+        "url": "rtsp://172.16.14.16:554/cam/realmonitor?channel=1&subtype=0",
+        "enabled": true,
+        "username": "admin",
+        "audioSyncMs": 0
+      }
+    ],
+    "preferences": {
+      "PreviewVideo": true,
+      "RequirePasswordForDeletion": true,
+      "ExtractedRecordingsPath": "C:\\Users\\candido.silva\\Desktop\\Registos MA\\Amostras PMM",
+      "LastPlaybackAudioSource": "S",
+      "LastAudioOffsetMs": 1400,
+      "LastSpectrumChannel": "R",
+      "LastWaveformGain": 20
+    }
+  }
+}

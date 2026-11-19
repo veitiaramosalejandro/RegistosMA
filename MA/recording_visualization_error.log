@@ -1,0 +1,14 @@
+2026-10-28T14:52:21
+A visualização terminou. Verifique a câmara e a configuração de áudio.
+
+Câmaras selecionadas: Câmara 1 -  CNC HARTFORD (ROBOTEA)
+FFmpeg: -138
+
+[tcp @ 00000209e6e85e40] Connection to tcp://172.16.14.16:554?timeout=3000000 failed: Error number -138 occurred
+[in#0 @ 00000209e6f52cc0] Error opening input: Error number -138 occurred
+Error opening input file [camera address]
+Error opening input files: Error number -138 occurred
+[tcp @ 00000209e6e85e40] Connection to tcp://172.16.14.16:554?timeout=3000000 failed: Error number -138 occurred
+[in#0 @ 00000209e6f52cc0] Error opening input: Error number -138 occurred
+Error opening input file [camera address]
+Error opening input files: Error number -138 occurred

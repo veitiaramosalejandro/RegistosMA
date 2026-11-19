@@ -1,0 +1,29 @@
+{
+    "WindowWidth":  1602,
+    "WindowHeight":  689,
+    "WindowMaximized":  false,
+    "Widths":  [
+                   208,
+                   155,
+                   102,
+                   157,
+                   154,
+                   302,
+                   147,
+                   117,
+                   195
+               ],
+    "NotesMinimum":  180,
+    "NotesMinimumVersion":  2,
+    "DisplayIndices":  [
+                           0,
+                           1,
+                           2,
+                           3,
+                           4,
+                           5,
+                           6,
+                           8,
+                           7
+                       ]
+}

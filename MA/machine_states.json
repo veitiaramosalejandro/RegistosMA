@@ -1,0 +1,11 @@
+{
+  "default": "idle",
+  "states": [
+    { "id": "unknown", "label_key": "Unknown" },
+    { "id": "idle", "label_key": "Idle" },
+    { "id": "running", "label_key": "Running" },
+    { "id": "paused", "label_key": "Paused" },
+    { "id": "stopped", "label_key": "Stopped" },
+    { "id": "alarm", "label_key": "Alarm" }
+  ]
+}

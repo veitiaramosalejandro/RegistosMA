@@ -1,0 +1,25 @@
+{
+    "Values":  {
+                   "Adjusted feed rate [mm/min]":  "",
+                   "Adjusted spindle speed [rpm]":  "",
+                   "Feed rate adjustment [%]":  "",
+                   "Machine":  "DMG MORI - DMU 50",
+                   "Notes":  "",
+                   "Operation":  "",
+                   "Operator":  "Operador 1",
+                   "Part":  "",
+                   "Part material":  "",
+                   "Programmed feed rate [mm/min]":  "",
+                   "Programmed spindle speed [rpm]":  "",
+                   "Spindle speed adjustment [%]":  "",
+                   "Strategy":  "",
+                   "Tool":  "",
+                   "Tool diameter [mm]":  "",
+                   "Tool flutes":  "",
+                   "Tool height [mm]":  "",
+                   "Tool material":  "",
+                   "Tool remaining use [%]":  "",
+                   "Tool type":  "",
+                   "Work":  ""
+               }
+}

@@ -1,0 +1,28 @@
+{
+    "Machine":  "DMG MORI - DMU 50",
+    "Operator":  "Operador 1",
+    "Work":  "2410 - Acab-2_1",
+    "Part":  "BE800aaa",
+    "PartMaterial":  "Aço P20",
+    "Operation":  "Furação",
+    "Tool":  {
+                 "Tool":  "TR50-RC0-L40",
+                 "Type":  "Broca",
+                 "Material":  "Carboneto tungsténio",
+                 "HeightMm":  120,
+                 "DiameterMm":  8
+             },
+    "Parameters":  {
+                       "SpindleSpeed":  {
+                                            "ProgrammedRpm":  3000,
+                                            "AdjustmentPercent":  90,
+                                            "AdjustedRpm":  2700
+                                        },
+                       "FeedRate":  {
+                                        "ProgrammedMmPerMin":  1000,
+                                        "AdjustmentPercent":  60,
+                                        "AdjustedMmPerMin":  600
+                                    }
+                   },
+    "Notes":  "Teste aaag zzzzz"
+}

@@ -1,0 +1,10 @@
+.git
+node_modules
+dist
+data
+*.ps1
+*.bat
+*.exe
+.audiortsp-runtime-*.yml
+.env
+README.md

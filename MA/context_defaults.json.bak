@@ -1,0 +1,24 @@
+{
+    "Values":  {
+                   "Adjusted feed rate [mm/min]":  "600",
+                   "Adjusted spindle speed [rpm]":  "2700",
+                   "Feed rate adjustment [%]":  "60",
+                   "Machine":  "DMG MORI - DMU 50",
+                   "Notes":  "Teste abcdefgzzzzzzzzzzaaaaaaaabbbb",
+                   "Operation":  "Furação",
+                   "Operator":  "Operador 1",
+                   "Part":  "BE800",
+                   "Part material":  "Aço P20",
+                   "Programmed feed rate [mm/min]":  "1000",
+                   "Programmed spindle speed [rpm]":  "3000",
+                   "Spindle speed adjustment [%]":  "90",
+                   "Tool":  "TR50-RC0-L40",
+                   "Tool diameter [mm]":  "8",
+                   "Tool flutes":  "1",
+                   "Tool height [mm]":  "120",
+                   "Tool material":  "Carboneto tungsténio",
+                   "Tool remaining use [%]":  "0",
+                   "Tool type":  "Broca",
+                   "Work":  "2410 - Acab-2_1"
+               }
+}

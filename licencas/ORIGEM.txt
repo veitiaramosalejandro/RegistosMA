@@ -1,0 +1,18 @@
+FFmpeg / FFplay / FFprobe
+Versao: 9.0.2-essentials_build-www.gyan.dev (Windows x64, static)
+Origem: pacote FFmpeg ja existente neste projeto, copiado sem alteracoes.
+Distribuidor: https://www.gyan.dev/ffmpeg/builds/
+Codigo-fonte da versao indicado pelo distribuidor:
+https://github.com/FFmpeg/FFmpeg/commit/946fcce07b
+Licenca e configuracao de compilacao: FFmpeg-LICENSE.txt e FFmpeg-README.txt.
+
+MediaMTX
+Versao: 1.21.3, Windows amd64
+Origem oficial:
+https://github.com/bluenviron/mediamtx/releases/tag/v1.21.3
+https://github.com/bluenviron/mediamtx/releases/download/v1.21.3/mediamtx_v1.21.3_windows_amd64.zip
+Codigo-fonte: https://github.com/bluenviron/mediamtx/tree/v1.21.3
+Licenca: MediaMTX-LICENSE.txt (MIT).
+O SHA-256 do ZIP foi comparado com checksums.sha256 da mesma release.
+
+As licencas destes componentes aplicam-se aos respetivos executaveis.

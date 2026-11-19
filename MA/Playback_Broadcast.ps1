@@ -1,5 +1,6 @@
 ﻿#Requires -Version 5.1
 # One runtime per manager process, shared with child playback script scopes.
+. (Join-Path $PSScriptRoot 'Playback_StreamMetadata.ps1')
 function Get-ApplicationBroadcast { return $global:MachiningMonitorPlaybackBroadcast }
 function Get-BroadcastText([string]$English,[string]$Portuguese){
     if($script:UiLanguage -eq 'en'){return $English};return $Portuguese
@@ -63,13 +64,14 @@ function Set-ApplicationBroadcastPlayer($State,$Session){
     if(-not $runtime){return}
     $runtime.Player=$Session.Player;$runtime.PlaybackState=$State
     $State.Context.Broadcast=$runtime.Session
-    if($runtime.Session){$Session.BroadcastCapture=$runtime.Session.Capture;$Session.BroadcastCapture.SetProcess($Session.Player.Id)}
+    if($runtime.Session){$Session.BroadcastCapture=$runtime.Session.Capture;$Session.BroadcastCapture.SetProcess($Session.Player.Id);Start-PlaybackStreamMetadata $runtime $State}
 }
 # Closing a recording detaches only its capture. The application keeps sending silence.
 function Stop-PlaybackBroadcast($State){
     $runtime=Get-ApplicationBroadcast
     if(-not $runtime){return}
     if($runtime.PlaybackState -eq $State){
+        Stop-PlaybackStreamMetadata $runtime
         if($runtime.Session){$runtime.Session.Capture.SetProcess(0)}
         $runtime.Player=$null;$runtime.PlaybackState=$null
     }
@@ -90,6 +92,7 @@ function Update-ApplicationBroadcast {
             if(($now-$session.CaptureWaitAt).TotalSeconds -gt 10){throw 'O Windows não iniciou a captura do áudio do leitor.'}
             $status=& $runtime.Engine {param($s) Get-TransmissionState $s} $session.Transmission
             if($status -eq 'Falha'){throw 'O servidor ou codificador RTSP deixou de responder.'}
+            Update-PlaybackStreamMetadata $runtime
         }
     }catch{
         $runtime.LastError=$_.Exception.Message

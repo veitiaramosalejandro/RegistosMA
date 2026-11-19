@@ -82,7 +82,10 @@ function Start-PortableProcess([string]$Exe, [string[]]$Arguments) {
 }
 function Stop-Transmission($Session) {
     if ($null -eq $Session) { return }
-    foreach ($p in @($Session.Encoder, $Session.Server)) {
+    $isCustom=$null -ne $Session.CustomRtspServer
+    if($isCustom){try{$Session.CustomRtspServer.Dispose()}catch{};$Session.CustomRtspServer=$null}
+    $processes=if($isCustom){@($Session.Encoder)}else{@($Session.Encoder,$Session.Server)}
+    foreach ($p in $processes) {
         if ($null -ne $p) {
             $p.Refresh()
             if (-not $p.HasExited) { $p.Kill(); $null=$p.WaitForExit(3000) }
@@ -97,7 +100,7 @@ function Stop-Transmission($Session) {
     }
 }
 function Start-Transmission {
-    param([string]$Device, [int]$Port=8554, [int]$Channels=2, [int]$Bitrate=192, [string]$BindAddress='127.0.0.1', [switch]$TestTone, $Access=$null, [switch]$PcmInput)
+    param([string]$Device, [int]$Port=8554, [int]$Channels=2, [int]$Bitrate=192, [string]$BindAddress='127.0.0.1', [switch]$TestTone, $Access=$null, [switch]$PcmInput, [switch]$MetadataInput)
     if($null -eq $Access){
         $stored=$null;$settingsPath=Join-Path $script:AppRoot 'config.json'
         if(Test-Path -LiteralPath $settingsPath){$stored=Get-Content -LiteralPath $settingsPath -Raw | ConvertFrom-Json}
@@ -158,15 +161,25 @@ paths:
     source: publisher
     overridePublisher: false
 "@
-    [IO.File]::WriteAllText($config,$yaml,(New-Object Text.UTF8Encoding($false)))
-    $session=[pscustomobject]@{Server=$null;Encoder=$null;ConfigPath=$config;Url="rtsp://${BindAddress}:$Port/audio";Started=Get-Date;Ready=$false}
+    $customServer=$null
+    if($MetadataInput){
+        $serverSource=Join-Path (Split-Path $script:AppRoot -Parent) 'MA\Playback_RtspMetadataServer.cs'
+        if(-not (Test-Path -LiteralPath $serverSource -PathType Leaf)){throw 'Falta MA\Playback_RtspMetadataServer.cs.'}
+        if(-not ('MachiningMonitor.Broadcast.MetadataRtspServer' -as [type])){Add-Type -Path $serverSource}
+        $authUser=if($Access.Enabled){$Access.Username}else{''};$authHash=if($Access.Enabled){$Access.PasswordHash}else{''}
+        $customServer=New-Object MachiningMonitor.Broadcast.MetadataRtspServer($bindIP,$Port,$Channels,$authUser,$authHash)
+    }else{[IO.File]::WriteAllText($config,$yaml,(New-Object Text.UTF8Encoding($false)))}
+    $session=[pscustomobject]@{Server=$null;Encoder=$null;ConfigPath=if($MetadataInput){$null}else{$config};Url="rtsp://${BindAddress}:$Port/audio";Started=Get-Date;Ready=$false;CustomRtspServer=$customServer}
     try {
-        $session.Server=Start-PortableProcess 'mediamtx.exe' @($config)
+        if($MetadataInput){
+            $customServer.Start();$session.Server=$customServer
+            for($i=0;$i -lt 40 -and -not $customServer.Listening;$i++){Start-Sleep -Milliseconds 100}
+            if(-not $customServer.Listening){throw 'O servidor RTSP de metadados demorou demasiado a arrancar.'}
+        }else{$session.Server=Start-PortableProcess 'mediamtx.exe' @($config)}
         $ready=$false
         for($i=0;$i -lt 40;$i++) {
-            $session.Server.Refresh()
-            if($session.Server.HasExited){throw 'O servidor RTSP não arrancou. Verifique a porta e a configuração de acesso.'}
-            if($session.Server.AudioOutput.Listening){$ready=$true;break}
+            if($MetadataInput){if($session.Server.Listening){$ready=$true;break}}
+            else{$session.Server.Refresh();if($session.Server.HasExited){throw 'O servidor RTSP não arrancou. Verifique a porta e a configuração de acesso.'};if($session.Server.AudioOutput.Listening){$ready=$true;break}}
             Start-Sleep -Milliseconds 100
         }
         if(-not $ready){throw 'O servidor RTSP demorou demasiado a arrancar.'}
@@ -180,6 +193,13 @@ paths:
     } catch { Stop-Transmission $session; throw }
 }
 function Get-TransmissionState($Session) {
+    if($Session.CustomRtspServer){
+        if(-not $Session.CustomRtspServer.Listening){return 'Falha'}
+        if($Session.Encoder){$Session.Encoder.Refresh();if($Session.Encoder.HasExited){return 'Falha'}}
+        if($Session.CustomRtspServer.Publishing){$Session.Ready=$true;return 'A transmitir'}
+        if(((Get-Date)-$Session.Started).TotalSeconds -gt 20){return 'Falha'}
+        return 'A iniciar'
+    }
     foreach($p in @($Session.Server,$Session.Encoder)) {
         $p.Refresh()
         if($p.HasExited){return 'Falha'}

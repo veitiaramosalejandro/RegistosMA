@@ -113,7 +113,7 @@ function Start-ApplicationBroadcast([string]$ConfigurationPath){
     if(Get-ApplicationBroadcast){return}
     Add-Type -AssemblyName System.Windows.Forms
     if(-not $ConfigurationPath){$ConfigurationPath=Join-Path $PSScriptRoot 'playback_broadcast.json'}
-    $runtime=@{ConfigPath=$ConfigurationPath;Config=(New-BroadcastConfiguration);Engine=$null;Session=$null;Player=$null;PlaybackState=$null;Timer=$null;Button=$null;LastError=$null;Updating=$false}
+    $runtime=@{ConfigPath=$ConfigurationPath;Config=(New-BroadcastConfiguration);Engine=$null;Session=$null;Player=$null;PlaybackState=$null;Metadata=$null;MetadataSent=0L;MetadataLastType=$null;MetadataLastPosition=$null;MetadataLastSendUtc=$null;MetadataLastError=$null;Timer=$null;Button=$null;LastError=$null;Updating=$false}
     $global:MachiningMonitorPlaybackBroadcast=$runtime
     try{
         $runtime.Config=Read-BroadcastConfiguration $ConfigurationPath

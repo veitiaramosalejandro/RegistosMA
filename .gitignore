@@ -4,4 +4,3 @@ AudioRTSP/dist/
 AudioRTSP/node_modules/
 AudioRTSP/web/
 .audiortsp-runtime-*.yml
-bin/*.exe

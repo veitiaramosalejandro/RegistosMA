@@ -1,8 +1,8 @@
 ﻿Machining Monitor 180 - latest seek
-Time: 2026-11-19T12:53:04
-TargetSeconds: 485.29004430327626
-InputStartSeconds: 478.89004430327628
+Time: 2026-11-19T13:48:34
+TargetSeconds: 82.64
+InputStartSeconds: 76.24
 Mode: block-local fast seek
 Fallback: 
-Input 0: skipped blocks=0; local seek seconds=478.89004430327628
-Input 1: skipped blocks=0; local seek seconds=478.89004430327628
+Input 0: skipped blocks=0; local seek seconds=76.24
+Input 1: skipped blocks=0; local seek seconds=76.24

@@ -6,10 +6,30 @@ using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Security.Cryptography;
+using System.Diagnostics;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 
 namespace MachiningMonitor.Broadcast {
+    public sealed class ProcessLifetime : IDisposable {
+        const uint JobObjectExtendedLimitInformation = 9, KillOnJobClose = 0x2000;
+        IntPtr handle;
+        [DllImport("kernel32.dll", CharSet=CharSet.Unicode, SetLastError=true)] static extern IntPtr CreateJobObject(IntPtr attributes, string name);
+        [DllImport("kernel32.dll", SetLastError=true)] static extern bool SetInformationJobObject(IntPtr job, int infoClass, ref ExtendedLimitInformation info, uint length);
+        [DllImport("kernel32.dll", SetLastError=true)] static extern bool AssignProcessToJobObject(IntPtr job, IntPtr process);
+        [DllImport("kernel32.dll", SetLastError=true)] static extern bool CloseHandle(IntPtr value);
+        [StructLayout(LayoutKind.Sequential)] struct BasicLimitInformation { public long PerProcessUserTimeLimit; public long PerJobUserTimeLimit; public uint LimitFlags; public UIntPtr MinimumWorkingSetSize; public UIntPtr MaximumWorkingSetSize; public uint ActiveProcessLimit; public UIntPtr Affinity; public uint PriorityClass; public uint SchedulingClass; }
+        [StructLayout(LayoutKind.Sequential)] struct IoCounters { public ulong ReadOperationCount; public ulong WriteOperationCount; public ulong OtherOperationCount; public ulong ReadTransferCount; public ulong WriteTransferCount; public ulong OtherTransferCount; }
+        [StructLayout(LayoutKind.Sequential)] struct ExtendedLimitInformation { public BasicLimitInformation BasicLimitInformation; public IoCounters IoInfo; public UIntPtr ProcessMemoryLimit; public UIntPtr JobMemoryLimit; public UIntPtr PeakProcessMemoryUsed; public UIntPtr PeakJobMemoryUsed; }
+        public ProcessLifetime() {
+            handle=CreateJobObject(IntPtr.Zero, null); if(handle==IntPtr.Zero) throw new InvalidOperationException("No se pudo crear el grupo de procesos de transmisión.");
+            var info=new ExtendedLimitInformation();info.BasicLimitInformation.LimitFlags=KillOnJobClose;
+            if(!SetInformationJobObject(handle,(int)JobObjectExtendedLimitInformation,ref info,(uint)Marshal.SizeOf(typeof(ExtendedLimitInformation)))){var code=Marshal.GetLastWin32Error();CloseHandle(handle);handle=IntPtr.Zero;throw new InvalidOperationException("No se pudo configurar el cierre del proceso de transmisión: "+code);}
+        }
+        public void Attach(Process process) { if(process==null || process.HasExited) throw new InvalidOperationException("El codificador de transmisión no está disponible."); if(!AssignProcessToJobObject(handle,process.Handle)){var code=Marshal.GetLastWin32Error();throw new InvalidOperationException("No se pudo vincular FFmpeg al ciclo de vida de MA: "+code);} }
+        public void Dispose() { if(handle!=IntPtr.Zero){CloseHandle(handle);handle=IntPtr.Zero;} }
+    }
     public sealed class MetadataRtspServer : IDisposable {
         readonly IPAddress address; readonly int port; readonly int channels; readonly string user; readonly string passwordHash;
         readonly TcpListener listener; readonly List<Client> clients = new List<Client>(); readonly object gate = new object();

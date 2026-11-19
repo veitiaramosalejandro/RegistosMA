@@ -84,6 +84,7 @@ function Stop-Transmission($Session) {
     if ($null -eq $Session) { return }
     $isCustom=$null -ne $Session.CustomRtspServer
     if($isCustom){try{$Session.CustomRtspServer.Dispose()}catch{};$Session.CustomRtspServer=$null}
+    if($Session.ProcessLifetime){try{$Session.ProcessLifetime.Dispose()}catch{};$Session.ProcessLifetime=$null}
     $processes=if($isCustom){@($Session.Encoder)}else{@($Session.Encoder,$Session.Server)}
     foreach ($p in $processes) {
         if ($null -ne $p) {
@@ -169,7 +170,7 @@ paths:
         $authUser=if($Access.Enabled){$Access.Username}else{''};$authHash=if($Access.Enabled){$Access.PasswordHash}else{''}
         $customServer=New-Object MachiningMonitor.Broadcast.MetadataRtspServer($bindIP,$Port,$Channels,$authUser,$authHash)
     }else{[IO.File]::WriteAllText($config,$yaml,(New-Object Text.UTF8Encoding($false)))}
-    $session=[pscustomobject]@{Server=$null;Encoder=$null;ConfigPath=if($MetadataInput){$null}else{$config};Url="rtsp://${BindAddress}:$Port/audio";Started=Get-Date;Ready=$false;CustomRtspServer=$customServer}
+    $session=[pscustomobject]@{Server=$null;Encoder=$null;ConfigPath=if($MetadataInput){$null}else{$config};Url="rtsp://${BindAddress}:$Port/audio";Started=Get-Date;Ready=$false;CustomRtspServer=$customServer;ProcessLifetime=$null}
     try {
         if($MetadataInput){
             $customServer.Start();$session.Server=$customServer
@@ -189,6 +190,7 @@ paths:
         else {$a+=@('-thread_queue_size','512','-f','dshow','-audio_buffer_size','50','-i',"audio=$Device")}
         $a+=@('-vn','-c:a','aac','-b:a',"${Bitrate}k",'-ar','48000','-ac',"$Channels",'-nostats','-f','rtsp','-rtsp_transport','tcp',$session.Url)
         $session.Encoder=Start-PortableProcess 'ffmpeg.exe' $a
+        if($MetadataInput){$session.ProcessLifetime=New-Object MachiningMonitor.Broadcast.ProcessLifetime;$session.ProcessLifetime.Attach($session.Encoder)}
         return $session
     } catch { Stop-Transmission $session; throw }
 }

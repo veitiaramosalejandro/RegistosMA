@@ -7,6 +7,8 @@ Cuando la emisión de audio está activa y se pulsa Play en una grabación, MA p
 
 La vista de configuración existente no cambia. La autenticación configurada en esa vista protege la lectura de ambas pistas. La publicación interna de FFmpeg solo se acepta desde loopback.
 
+Al iniciar `Gerir_Gravacoes.ps1`, si `Enabled` está en `true`, MA arranca automáticamente el servidor y el publicador. Al cerrar normalmente, `Gerir_Gravacoes.ps1` ejecuta `Stop-ApplicationBroadcast`. Además, FFmpeg queda asociado a un Windows Job Object: si MA termina de forma inesperada, Windows finaliza el codificador y libera el puerto.
+
 ## Payload de metadatos
 
 Cada mensaje ocupa uno o más paquetes RTP. Se concatena el payload RTP de los paquetes de una misma marca RTP y se interpreta así:

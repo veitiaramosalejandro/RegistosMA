@@ -3,7 +3,7 @@
 function New-PlaybackStreamMetadata($State){
     $folder=Split-Path $State.Path -Parent;$metadata=$null;$metadataPath=Join-Path $folder 'metadata.json'
     if(Test-Path -LiteralPath $metadataPath){$metadata=Get-Content -LiteralPath $metadataPath -Raw -Encoding UTF8 | ConvertFrom-Json}
-    return @{State=$State;RecordingId=(Split-Path $folder -Leaf);Metadata=$metadata;Contexts=@($State.ContextEntries);Events=@($State.Items | Sort-Object timestamp_seconds,created_at_utc,id);EventIndex=0;Sequence=0;LastPosition=-1.0;LastPaused=$null;Ended=$false}
+    return @{State=$State;RecordingId=(Split-Path $folder -Leaf);Metadata=$metadata;Contexts=@($State.ContextEntries);Events=@($State.Items | Sort-Object timestamp_seconds,created_at_utc,id);EventIndex=0;Sequence=0;LastPosition=-1.0;LastSnapshot=-1.0;LastPaused=$null;Ended=$false}
 }
 function Write-PlaybackStreamMetadata($Runtime,$Message){
     if(-not $Runtime.Metadata -or -not $Runtime.Session.CustomRtspServer){return $false}
@@ -30,6 +30,7 @@ function Update-PlaybackStreamMetadata($Runtime){
     if($state.Paused){return}
     if($position -lt ($m.LastPosition-0.5)){$m.EventIndex=0;while($m.EventIndex -lt $m.Events.Count -and [double]$m.Events[$m.EventIndex].timestamp_seconds -lt $position){$m.EventIndex++};Write-PlaybackStreamMetadata $Runtime ([ordered]@{type='stream_seek';recordingId=$m.RecordingId;timestampSeconds=$position});Send-PlaybackStreamSnapshot $Runtime $position 'seek'}
     while($m.EventIndex -lt $m.Events.Count -and [double]$m.Events[$m.EventIndex].timestamp_seconds -le $position){$event=$m.Events[$m.EventIndex];Write-PlaybackStreamMetadata $Runtime ([ordered]@{type='event';recordingId=$m.RecordingId;timestampSeconds=[double]$event.timestamp_seconds;event=$event});$m.EventIndex++}
+    if($m.LastSnapshot -lt 0 -or ($position-$m.LastSnapshot) -ge 1.0){Send-PlaybackStreamSnapshot $Runtime $position 'heartbeat';$m.LastSnapshot=$position}
     $m.LastPosition=$position;if($state.Ended -and -not $m.Ended){Write-PlaybackStreamMetadata $Runtime ([ordered]@{type='stream_end';recordingId=$m.RecordingId;timestampSeconds=[double]$state.Duration});$m.Ended=$true}
 }
 function Stop-PlaybackStreamMetadata($Runtime){

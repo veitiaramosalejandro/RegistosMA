@@ -31,5 +31,6 @@ Los mensajes contienen `type`, `recordingId`, `timestampSeconds` y `sequence`.
 - `stream_pause` / `stream_resume`: cambio de reproducción.
 - `stream_seek`: reposicionamiento; el consumidor debe esperar el `snapshot` siguiente.
 - `stream_end`: final de reproducción.
+- `snapshot` con `reason: heartbeat`: sincronización periódica, aproximadamente una vez por segundo durante la reproducción.
 
 Los tiempos son segundos relativos a la reproducción y corresponden a `time_reference: playback_seconds`.

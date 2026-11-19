@@ -32,7 +32,7 @@ namespace MachiningMonitor.Broadcast {
     }
     public sealed class MetadataRtspServer : IDisposable {
         readonly IPAddress address; readonly int port; readonly int channels; readonly string user; readonly string passwordHash;
-        readonly TcpListener listener; readonly List<Client> clients = new List<Client>(); readonly object gate = new object();
+        readonly TcpListener listener; readonly List<Client> clients = new List<Client>(); readonly List<byte[]> metadataHistory = new List<byte[]>(); readonly object gate = new object();
         Thread acceptThread; volatile bool stopping; long metadataSequence; ushort metadataRtpSequence; uint metadataTimestamp;
         string announcedSdp = "";
         public volatile bool Listening; public volatile bool Publishing;
@@ -63,14 +63,15 @@ namespace MachiningMonitor.Broadcast {
         internal void PublishAudio(byte[] packet) { Client[] copy; lock (gate) copy = clients.Where(x => x.IsReader && x.AudioChannel >= 0).ToArray(); foreach (var c in copy) c.SendInterleaved(c.AudioChannel, packet); }
         public void SendMetadata(byte[] framedJson) {
             if (framedJson == null || framedJson.Length == 0) return;
-            var timestamp = unchecked(metadataTimestamp += 1000); var sequence = metadataRtpSequence;
-            const int maxPayload = 1200; var offset = 0;
+            lock (gate) { metadataHistory.Add((byte[])framedJson.Clone()); if(metadataHistory.Count>2048)metadataHistory.RemoveAt(0); }
+            Client[] copy; lock (gate) copy = clients.Where(x => x.IsReader && x.MetadataChannel >= 0).ToArray(); foreach (var c in copy) SendMetadataToClient(c,framedJson);
+        }
+        internal void ReplayMetadata(Client client) { byte[][] copy; lock(gate) copy=metadataHistory.Select(x=>(byte[])x.Clone()).ToArray(); foreach(var item in copy)SendMetadataToClient(client,item); }
+        void SendMetadataToClient(Client client, byte[] framedJson) {
+            var timestamp = unchecked(metadataTimestamp += 1000); var sequence = metadataRtpSequence; const int maxPayload = 1200; var offset = 0;
             while (offset < framedJson.Length) {
-                var count = Math.Min(maxPayload, framedJson.Length - offset); var packet = new byte[12 + count];
-                packet[0] = 0x80; packet[1] = 97; if (offset + count >= framedJson.Length) packet[1] |= 0x80;
-                WriteU16(packet, 2, sequence++); WriteU32(packet, 4, timestamp); WriteU32(packet, 8, 0x4d414d31);
-                Buffer.BlockCopy(framedJson, offset, packet, 12, count); offset += count;
-                Client[] copy; lock (gate) copy = clients.Where(x => x.IsReader && x.MetadataChannel >= 0).ToArray(); foreach (var c in copy) c.SendInterleaved(c.MetadataChannel, packet);
+                var count = Math.Min(maxPayload, framedJson.Length - offset); var packet = new byte[12 + count]; packet[0] = 0x80; packet[1] = 97; if (offset + count >= framedJson.Length) packet[1] |= 0x80;
+                WriteU16(packet, 2, sequence++); WriteU32(packet, 4, timestamp); WriteU32(packet, 8, 0x4d414d31); Buffer.BlockCopy(framedJson, offset, packet, 12, count); offset += count; client.SendInterleaved(client.MetadataChannel, packet);
             }
             metadataRtpSequence = sequence; Interlocked.Increment(ref metadataSequence);
         }
@@ -79,7 +80,7 @@ namespace MachiningMonitor.Broadcast {
 
         internal sealed class Client {
             readonly MetadataRtspServer server; readonly TcpClient tcp; readonly NetworkStream stream; readonly object writeGate = new object();
-            string session = Guid.NewGuid().ToString("N"); bool closed; bool authorized;
+            string session = Guid.NewGuid().ToString("N"); bool closed; bool authorized; bool metadataReplayed;
             public bool IsPublisher; public bool IsReader; public int AudioChannel = -1; public int MetadataChannel = -1;
             public Client(MetadataRtspServer server, TcpClient tcp) { this.server = server; this.tcp = tcp; stream = tcp.GetStream(); }
             public void Close() { if (closed) return; closed = true; try { tcp.Close(); } catch { } server.Remove(this); }
@@ -99,7 +100,7 @@ namespace MachiningMonitor.Broadcast {
                 if (r.Method == "DESCRIBE") { if(!server.Authorize(r.Headers.ContainsKey("Authorization")?r.Headers["Authorization"]:null)){SendAuth(cseq);return;} authorized=true; IsReader=true; var sdp=BuildSdp(server.AnnouncedSdp); Send("RTSP/1.0 200 OK\r\nCSeq: "+cseq+"\r\nContent-Base: rtsp://"+server.address+":"+server.port+"/audio/\r\nContent-Type: application/sdp\r\nContent-Length: "+Encoding.UTF8.GetByteCount(sdp)+"\r\n\r\n"+sdp); return; }
                 if (r.Method == "SETUP") { if(!IsPublisher && !authorized && !server.Authorize(r.Headers.ContainsKey("Authorization")?r.Headers["Authorization"]:null)){SendAuth(cseq);return;} if(!IsPublisher)authorized=true; var metadata=r.Url.IndexOf("trackID=1",StringComparison.OrdinalIgnoreCase)>=0; if(metadata) MetadataChannel=2; else AudioChannel=0; var channel=metadata?"2-3":"0-1"; Send("RTSP/1.0 200 OK\r\nCSeq: "+cseq+"\r\nSession: "+session+"\r\nTransport: RTP/AVP/TCP;unicast;interleaved="+channel+"\r\n\r\n"); return; }
                 if (r.Method == "RECORD") { Send("RTSP/1.0 200 OK\r\nCSeq: "+cseq+"\r\nSession: "+session+"\r\n\r\n"); return; }
-                if (r.Method == "PLAY") { if(!server.Authorize(r.Headers.ContainsKey("Authorization")?r.Headers["Authorization"]:null) && !authorized){SendAuth(cseq);return;} authorized=true; Send("RTSP/1.0 200 OK\r\nCSeq: "+cseq+"\r\nSession: "+session+"\r\nRTP-Info: url=trackID=0;seq=0;rtptime=0,url=trackID=1;seq=0;rtptime=0\r\n\r\n"); return; }
+                if (r.Method == "PLAY") { if(!server.Authorize(r.Headers.ContainsKey("Authorization")?r.Headers["Authorization"]:null) && !authorized){SendAuth(cseq);return;} authorized=true; Send("RTSP/1.0 200 OK\r\nCSeq: "+cseq+"\r\nSession: "+session+"\r\nRTP-Info: url=trackID=0;seq=0;rtptime=0,url=trackID=1;seq=0;rtptime=0\r\n\r\n"); if(IsReader && MetadataChannel>=0 && !metadataReplayed){metadataReplayed=true;server.ReplayMetadata(this);} return; }
                 if (r.Method == "TEARDOWN") { Send("RTSP/1.0 200 OK\r\nCSeq: "+cseq+"\r\nSession: "+session+"\r\n\r\n"); Close(); return; }
                 Send("RTSP/1.0 200 OK\r\nCSeq: "+cseq+"\r\n\r\n");
             }

@@ -254,6 +254,7 @@ function Stop-QualityPlayback {
 function Request-QualitySeek {
     param($State, [double]$Seconds, [switch]$FromTimeline, [switch]$CenterTimeline)
     if ($null -eq $State.Context -or $State.Duration -le 0 -or [double]::IsNaN($Seconds) -or [double]::IsInfinity($Seconds)) { return }
+    Stop-AnalyzerPlayback
     $State.EventListPinnedId=$null
     $State.PendingSeek=[Math]::Min([Math]::Max(0.0,$Seconds),$State.Duration)
     # The endpoint is a paused player state, not a request to encode an empty
@@ -371,6 +372,7 @@ function Wait-QualityPlayback {
                     $state.OpeningNoticePending=$false
                 }
             }
+            Update-AnalyzerPlayback $state
             if ($null -ne $session.Copy -and $session.Copy.IsCompleted -and -not $session.InputClosed) {
                 [void]$session.Copy.GetAwaiter().GetResult()
                 $session.Player.StandardInput.Close(); $session.InputClosed=$true

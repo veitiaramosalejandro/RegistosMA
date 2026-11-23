@@ -1,4 +1,4 @@
-# Creates and validates schema version 7 events for HTTP/TCP integration with MachiningMonitor.
+﻿# Creates and validates schema version 7 events for HTTP/TCP integration with MachiningMonitor.
 function New-MachiningMonitorEvent {
     param(
         [Parameter(Mandatory)][guid]$MachineId,

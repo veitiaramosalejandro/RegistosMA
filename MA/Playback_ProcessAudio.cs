@@ -1,4 +1,4 @@
-// Capture only audio rendered by the selected player process (Windows build 20348+).
+﻿// Capture only audio rendered by the selected player process (Windows build 20348+).
 // PCM is relayed on a bounded, real-time clock. No recording is opened here.
 using System;
 using System.IO;

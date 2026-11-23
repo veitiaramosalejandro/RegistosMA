@@ -1577,12 +1577,6 @@ $script:RecordingControllerTimer.Add_Tick({
     $ui.ControllerBusy=$true
     try {
         if($ui.Ready -and -not $ui.Running){
-            # Detect incomplete updates before stopping previews or allocating capture resources.
-            foreach($required in @('Get-RecordingCaptureAudioClockFilter','Get-RecordingCaptureVideoClockFilter','Get-RecordingCameraInputArguments')){
-                if(-not (Get-Command $required -CommandType Function -ErrorAction SilentlyContinue)){
-                    throw ("Instalação incompleta: falta a função / Incomplete installation: missing function $required. Recording_Synchronization.ps1")
-                }
-            }
             $script:validatedLiveCamera=Get-HealthyLiveCamera
             Stop-ActiveRecordingView
             $ui.Ready=$false
@@ -1616,13 +1610,11 @@ $script:RecordingControllerTimer.Add_Tick({
     } catch {
         $failure=$_.Exception.Message
         # Preserve a timed/scheduled failure in the result notice and queue before resetting the form.
-        # Clear the pending start before opening any modal dialog: DoEvents can
-        # otherwise service another timer tick while recovery is in progress.
-        $ui.Ready=$false;$ui.Running=$false
-        try {Complete-RecordingPlan $false ([datetime]::Now) $failure} catch {Write-Warning $_.Exception.Message}
+        Complete-RecordingPlan $false ([datetime]::Now) $failure
         try { . $script:RecordingCleanupAction } catch {Write-Warning $_.Exception.Message}
-        finally {Reset-RecordingForm}
+        $ui.Running=$false
         Show-QualityError $failure
+        Reset-RecordingForm
     } finally {$ui.ControllerBusy=$false; Update-RecordingViewIndicator}
 })
 $script:RecordingClockTimer=New-Object Windows.Forms.Timer

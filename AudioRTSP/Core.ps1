@@ -82,11 +82,7 @@ function Start-PortableProcess([string]$Exe, [string[]]$Arguments) {
 }
 function Stop-Transmission($Session) {
     if ($null -eq $Session) { return }
-    $isCustom=$null -ne $Session.CustomRtspServer
-    if($isCustom){try{$Session.CustomRtspServer.Dispose()}catch{};$Session.CustomRtspServer=$null}
-    if($Session.ProcessLifetime){try{$Session.ProcessLifetime.Dispose()}catch{};$Session.ProcessLifetime=$null}
-    $processes=if($isCustom){@($Session.Encoder)}else{@($Session.Encoder,$Session.Server)}
-    foreach ($p in $processes) {
+    foreach ($p in @($Session.Encoder, $Session.Server)) {
         if ($null -ne $p) {
             $p.Refresh()
             if (-not $p.HasExited) { $p.Kill(); $null=$p.WaitForExit(3000) }
@@ -101,7 +97,7 @@ function Stop-Transmission($Session) {
     }
 }
 function Start-Transmission {
-    param([string]$Device, [int]$Port=8554, [int]$Channels=2, [int]$Bitrate=192, [string]$BindAddress='127.0.0.1', [switch]$TestTone, $Access=$null, [switch]$PcmInput, [switch]$MetadataInput)
+    param([string]$Device, [int]$Port=8554, [int]$Channels=2, [int]$Bitrate=192, [string]$BindAddress='127.0.0.1', [switch]$TestTone, $Access=$null, [switch]$PcmInput, [string]$AuthHttp='', [int]$ApiPort=0)
     if($null -eq $Access){
         $stored=$null;$settingsPath=Join-Path $script:AppRoot 'config.json'
         if(Test-Path -LiteralPath $settingsPath){$stored=Get-Content -LiteralPath $settingsPath -Raw | ConvertFrom-Json}
@@ -109,18 +105,21 @@ function Start-Transmission {
     }
     Assert-AudioAccess $Access
     $bindIP=Assert-BindAddress $BindAddress
+    # When a network address is selected, listen on IPv4 interfaces as well
+    # so the local MachiningMonitor service can always use 127.0.0.1.
+    $listenAddress=if($BindAddress -eq '127.0.0.1'){'127.0.0.1'}else{'0.0.0.0'}
     if ($Port -lt 1024 -or $Port -gt 65535) { throw 'A porta deve estar entre 1024 e 65535.' }
     if ($Channels -notin @(1,2) -or $Bitrate -notin @(64,128,192,256,320)) { throw 'Formato de audio invalido.' }
     if (-not $TestTone -and -not $PcmInput -and [string]::IsNullOrWhiteSpace($Device)) { throw 'Selecione uma entrada de audio.' }
     foreach ($exe in @('ffmpeg.exe','mediamtx.exe')) {
         if (-not (Test-Path -LiteralPath (Get-AudioExecutable $exe))) { throw "Falta ..\bin\$exe. Coloque bin ao lado da pasta AudioRTSP." }
     }
-    if(@([Net.NetworkInformation.IPGlobalProperties]::GetIPGlobalProperties().GetActiveTcpListeners() | Where-Object {$_.Port -eq $Port -and $_.Address.IPAddressToString -in @($BindAddress,'0.0.0.0','::')}).Count){throw "A porta $Port esta ocupada neste IP. Escolha outra porta."}
+    if(@([Net.NetworkInformation.IPGlobalProperties]::GetIPGlobalProperties().GetActiveTcpListeners() | Where-Object {$_.Port -eq $Port}).Count){throw "A porta $Port esta ocupada neste IP. Escolha outra porta."}
     $client=New-Object Net.Sockets.TcpClient
     $occupied=$false
     try{$client.Connect($BindAddress,$Port);$occupied=$true}catch{}finally{$client.Close()}
     if($occupied){throw "A porta $Port esta ocupada. Escolha outra porta."}
-    $listener = New-Object Net.Sockets.TcpListener($bindIP,$Port)
+    $listener = New-Object Net.Sockets.TcpListener(([Net.IPAddress]::Parse($listenAddress)),$Port)
     $listener.Server.ExclusiveAddressUse=$true
     try { $listener.Start() } catch { throw "A porta $Port esta ocupada. Escolha outra porta." } finally { $listener.Stop() }
     $config=Join-Path $script:AppRoot ('.audiortsp-runtime-'+[guid]::NewGuid().ToString('N')+'.yml')
@@ -133,7 +132,7 @@ function Start-Transmission {
 logLevel: info
 logDestinations: [stdout]
 rtsp: true
-rtspAddress: ${BindAddress}:$Port
+rtspAddress: ${listenAddress}:$Port
 rtspTransports: [tcp]
 rtspAuthMethods: [basic]
 rtmp: false
@@ -148,7 +147,7 @@ playback: false
 authMethod: internal
 authInternalUsers:
   - user: any
-    ips: ['$BindAddress']
+    ips: ['$BindAddress', '127.0.0.1']
     permissions:
       - action: publish
         path: audio
@@ -162,25 +161,21 @@ paths:
     source: publisher
     overridePublisher: false
 "@
-    $customServer=$null
-    if($MetadataInput){
-        $serverSource=Join-Path (Split-Path $script:AppRoot -Parent) 'MA\Playback_RtspMetadataServer.cs'
-        if(-not (Test-Path -LiteralPath $serverSource -PathType Leaf)){throw 'Falta MA\Playback_RtspMetadataServer.cs.'}
-        if(-not ('MachiningMonitor.Broadcast.MetadataRtspServer' -as [type])){Add-Type -Path $serverSource}
-        $authUser=if($Access.Enabled){$Access.Username}else{''};$authHash=if($Access.Enabled){$Access.PasswordHash}else{''}
-        $customServer=New-Object MachiningMonitor.Broadcast.MetadataRtspServer($bindIP,$Port,$Channels,$authUser,$authHash)
-    }else{[IO.File]::WriteAllText($config,$yaml,(New-Object Text.UTF8Encoding($false)))}
-    $session=[pscustomobject]@{Server=$null;Encoder=$null;ConfigPath=if($MetadataInput){$null}else{$config};Url="rtsp://${BindAddress}:$Port/audio";Started=Get-Date;Ready=$false;CustomRtspServer=$customServer;ProcessLifetime=$null}
+    if($AuthHttp){
+        if($AuthHttp -notmatch '^http://127\.0\.0\.1:[0-9]+/auth-[a-f0-9]+$' -or $ApiPort -lt 1){throw 'Configuração de acesso temporário inválida.'}
+        $start=$yaml.IndexOf('authMethod: internal');$finish=$yaml.IndexOf('paths:',$start)
+        $yaml=$yaml.Substring(0,$start)+"authMethod: http`nauthHTTPAddress: $AuthHttp`nauthHTTPExclude: []`n"+$yaml.Substring($finish)
+        $yaml=$yaml.Replace('api: false',("api: true`napiAddress: 127.0.0.1:"+$ApiPort))
+    }
+    [IO.File]::WriteAllText($config,$yaml,(New-Object Text.UTF8Encoding($false)))
+    $session=[pscustomobject]@{Server=$null;Encoder=$null;ConfigPath=$config;Url="rtsp://${BindAddress}:$Port/audio";Started=Get-Date;Ready=$false}
     try {
-        if($MetadataInput){
-            $customServer.Start();$session.Server=$customServer
-            for($i=0;$i -lt 40 -and -not $customServer.Listening;$i++){Start-Sleep -Milliseconds 100}
-            if(-not $customServer.Listening){throw 'O servidor RTSP de metadados demorou demasiado a arrancar.'}
-        }else{$session.Server=Start-PortableProcess 'mediamtx.exe' @($config)}
+        $session.Server=Start-PortableProcess 'mediamtx.exe' @($config)
         $ready=$false
         for($i=0;$i -lt 40;$i++) {
-            if($MetadataInput){if($session.Server.Listening){$ready=$true;break}}
-            else{$session.Server.Refresh();if($session.Server.HasExited){throw 'O servidor RTSP não arrancou. Verifique a porta e a configuração de acesso.'};if($session.Server.AudioOutput.Listening){$ready=$true;break}}
+            $session.Server.Refresh()
+            if($session.Server.HasExited){throw 'O servidor RTSP não arrancou. Verifique a porta e a configuração de acesso.'}
+            if($session.Server.AudioOutput.Listening){$ready=$true;break}
             Start-Sleep -Milliseconds 100
         }
         if(-not $ready){throw 'O servidor RTSP demorou demasiado a arrancar.'}
@@ -190,19 +185,10 @@ paths:
         else {$a+=@('-thread_queue_size','512','-f','dshow','-audio_buffer_size','50','-i',"audio=$Device")}
         $a+=@('-vn','-c:a','aac','-b:a',"${Bitrate}k",'-ar','48000','-ac',"$Channels",'-nostats','-f','rtsp','-rtsp_transport','tcp',$session.Url)
         $session.Encoder=Start-PortableProcess 'ffmpeg.exe' $a
-        if($MetadataInput){$session.ProcessLifetime=New-Object MachiningMonitor.Broadcast.ProcessLifetime;$session.ProcessLifetime.Attach($session.Encoder)}
         return $session
     } catch { Stop-Transmission $session; throw }
 }
 function Get-TransmissionState($Session) {
-    if($Session.CustomRtspServer){
-        if(-not $Session.CustomRtspServer.Listening){return 'Falha'}
-        if($Session.Encoder){$Session.Encoder.Refresh();if($Session.Encoder.HasExited){return 'Falha'}}
-        if($Session.CustomRtspServer.Publishing){$Session.Ready=$true;return 'A transmitir'}
-        # The playback broadcaster starts before a recording is selected. FFmpeg
-        # waits for the first PCM block, so lack of ANNOUNCE is expected here.
-        return 'A iniciar'
-    }
     foreach($p in @($Session.Server,$Session.Encoder)) {
         $p.Refresh()
         if($p.HasExited){return 'Falha'}

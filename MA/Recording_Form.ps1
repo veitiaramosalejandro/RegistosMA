@@ -302,7 +302,7 @@ function Wait-RecordingFormStart {
     while(-not $u.Ready -and -not $f.IsDisposed) { [Windows.Forms.Application]::DoEvents(); Start-Sleep -Milliseconds 40 }
     if($f.IsDisposed) { throw [OperationCanceledException]::new('Recording cancelled.') }
     $u.List.Items.Clear()
-    $u.Start.Enabled=$false; $u.Mode.Enabled=$false; $u.Settings.Enabled=$false; $u.ContextButton.Enabled=$true
+    $u.Start.Enabled=$false; $u.Mode.Enabled=$false; $u.Settings.Enabled=$false; $u.ContextButton.Enabled=$false
 }
 
 # Return controls to their ready state after a recording finishes or a start is cancelled.

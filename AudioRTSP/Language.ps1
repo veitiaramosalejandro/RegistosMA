@@ -35,6 +35,7 @@ $script:AudioEnglish=@{
     'Atualizar entradas'='Refresh inputs'
     'Rede / endereço IP de transmissão'='Network / streaming IP address'
     'Atualizar redes'='Refresh networks'
+    '127.0.0.1 - Apenas este computador'='127.0.0.1 - This computer only'
     'Porta RTSP'='RTSP port'
     'Canais'='Channels'
     'Qualidade AAC'='AAC quality'

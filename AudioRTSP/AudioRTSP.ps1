@@ -121,6 +121,7 @@ try {
         foreach($control in $form.Controls){if($control.Tag -is [string] -and $control -ne $status){$control.Text=Get-AudioText $control.Tag}}
         $index=$channels.SelectedIndex;$channels.Items.Clear();$channels.Items.AddRange(@('Mono (1)',(Get-AudioText 'Estéreo (2)')));$channels.SelectedIndex=$index
         $apply.Text=if($language.SelectedIndex -eq 1){'Apply'}else{'Aplicar'}
+        foreach($item in $network.Items){if($item.Address -eq '127.0.0.1'){$item.Name=Get-AudioText '127.0.0.1 - Apenas este computador';$network.Refresh();break}}
         Set-Status $script:statusKey
     }
     $profile=Join-Path $PSScriptRoot 'config.json'
@@ -165,6 +166,7 @@ try {
         try {
             $network.Items.Clear()
             foreach($item in @(Get-LocalIPv4)){$null=$network.Items.Add($item)}
+            $null=$network.Items.Add([pscustomobject]@{Address='127.0.0.1';Name=(Get-AudioText '127.0.0.1 - Apenas este computador')})
             $network.SelectedIndex=-1
             for($i=0;$i -lt $network.Items.Count;$i++){
                 if($network.Items[$i].Address -eq $script:savedAddress){$network.SelectedIndex=$i;break}

@@ -196,50 +196,10 @@ function Complete-IndependentViewLayout {
     foreach($s in $views){if($s.DisplayRenderKey -cne $s.DesiredRenderKey -or $s.Host.Bounds -ne $s.TargetBounds){$pending=$true}}
     if([bool]$u.Viewport.Tag.SplittersTransition -ne $pending){$u.Viewport.Tag.SplittersTransition=$pending;Update-VisualizationGrips $u.Viewport}
 }
-function Get-RecordingSessionConnectionState {
-    if(-not ('MachiningMonitor.RecordingSessionConnection' -as [type])){
-        Add-Type -TypeDefinition @'
-using System;
-using System.Diagnostics;
-using System.Runtime.InteropServices;
-namespace MachiningMonitor {
- public static class RecordingSessionConnection {
-  [DllImport("wtsapi32.dll")] static extern bool WTSQuerySessionInformation(IntPtr server,int session,int info,out IntPtr data,out int size);
-  [DllImport("wtsapi32.dll")] static extern void WTSFreeMemory(IntPtr data);
-  public static int Read() {
-   IntPtr data=IntPtr.Zero; int size;
-   try {
-    if(!WTSQuerySessionInformation(IntPtr.Zero,Process.GetCurrentProcess().SessionId,8,out data,out size) || size<4) return -1;
-    return Marshal.ReadInt32(data);
-   } finally {if(data!=IntPtr.Zero) WTSFreeMemory(data);}
-  }
- }
-}
-'@
-    }
-    return [MachiningMonitor.RecordingSessionConnection]::Read()
-}
-function Update-RecordingSessionRecovery {
-    $now=[datetime]::UtcNow
-    if($script:recordingSessionPoll -and ($now-$script:recordingSessionPoll).TotalSeconds -lt 1){return}
-    $script:recordingSessionPoll=$now
-    $connection=Get-RecordingSessionConnectionState
-    if($connection -lt 0){return}
-    if($connection -ne 0){$script:recordingSessionNeedsRecovery=$true;return}
-    if(-not $script:recordingSessionNeedsRecovery){return}
-    $script:recordingSessionNeedsRecovery=$false
-    # SDL can keep decoding while its RDS rendering surface is lost. Replace
-    # only the chart view; the capture and the camera reader keep running.
-    if($script:sourceViews.ContainsKey('Audio')){
-        Stop-SourceView $script:sourceViews.Audio
-        $script:sourceViews.Remove('Audio')
-    }
-}
 function Update-IndependentRecordingView {
     param([switch]$Capturing)
     $u=$script:RecordingUi
     if($SemGraficos -or -not $u -or $u.Form.IsDisposed -or $u.Mode.DroppedDown){return}
-    Update-RecordingSessionRecovery
     if(Test-RecordingGeometrySuppressed){return}
     Update-IndependentSelectionTransition
     $script:independentCapturing=[bool]$Capturing

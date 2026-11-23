@@ -62,16 +62,6 @@ function Save-RecordingMetadataDialog {
     if (Test-Path -LiteralPath $c.Path) { $currentHash=(Get-FileHash -LiteralPath $c.Path -Algorithm SHA256).Hash }
     if ($currentHash -ne $c.OriginalHash) { throw (Get-QualityText 'Metadata changed outside this window. Cancel and reopen the editor.' 'Os metadados foram alterados fora desta janela. Cancele e volte a abrir o editor.') }
     if($c.State.IsDefaultContext){
-        if($c.State.IsLiveContext){
-            if(-not $script:RecordingUi.Running -or $script:RecordingUi.Stopping){throw (Get-QualityText 'Recording has ended. Edit the context in management.' 'A gravação terminou. Edite o contexto na gestão.')}
-            $entries=@(Read-RecordingContexts $c.State.LiveFolder)
-            $entries[0].context=Copy-RecordingContextValue $c.Metadata.Context
-            Write-RecordingContexts $c.State.LiveFolder $entries
-            $script:CompletedRecordingContext=Copy-SplitObject $c.Metadata.Context
-            $script:RecordingUi.PlanContextManaged=$true
-            if($c.SaveDefaults.Checked){Save-DefaultRecordingContext $c.Metadata.Context}
-            return
-        }
         if($c.SaveDefaults.Checked){Save-DefaultRecordingContext $c.Metadata.Context}
         $script:RecordingUi.PendingRecordingContext=Copy-SplitObject $c.Metadata.Context
         $c.State.Split.Metadata=Copy-SplitObject $c.Metadata
@@ -342,17 +332,11 @@ function Save-DefaultRecordingContext {
 # Edit defaults before capture, without creating recording metadata.
 function Show-DefaultRecordingContext {
     $u=$script:RecordingUi
-    if($u.Stopping){return}
+    if($u.Running -or $u.Stopping){return}
     $state=@{Split=@{Folder=$PSScriptRoot;Metadata=$null};VideoHost=$u.VideoHost;IsDefaultContext=$true;IsRecordingContext=$false}
-    if($u.Running){$state.IsLiveContext=$true;$state.LiveFolder=$script:outputPath}
     $dialog=$null
     try {
         $context=if($null -ne $u.PendingRecordingContext){Copy-SplitObject $u.PendingRecordingContext}else{Get-LastRecordingContext}
-        if($state.IsLiveContext){
-            if(Test-Path -LiteralPath (Join-Path $state.LiveFolder 'contexts.json')){$context=Copy-RecordingContextValue (@(Read-RecordingContexts $state.LiveFolder)[0].context)}
-            elseif($null -ne $script:CompletedRecordingContext){$context=Copy-SplitObject $script:CompletedRecordingContext}
-            else{$context=New-EmptyRecordingContext}
-        }
         $dialog=New-RecordingMetadataDialog $state $context
         [void]$dialog.ShowDialog($u.Form)
     } finally {if($dialog){$dialog.Dispose()}}

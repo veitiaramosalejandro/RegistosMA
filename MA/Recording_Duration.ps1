@@ -103,25 +103,11 @@ function Get-RecordedFilesSeconds {
 }
 function Get-RecordedSessionSeconds {
     param([string]$Folder)
-    try {
+    try{
         $files=@(Get-ChildItem -LiteralPath $Folder -File -ErrorAction Stop)
-        $durations=New-Object 'System.Collections.Generic.List[double]'
-        $groups=@{}
-        foreach($file in $files){
-            if($file.Name -match '^(video|camera_\d+)(?:_\d+)?\.mp4$'){$kind=$Matches[1];if(-not $groups.ContainsKey($kind)){$groups[$kind]=@()};$groups[$kind]+=$file}
-        }
-        foreach($group in $groups.Values){$seconds=Get-RecordedFilesSeconds @($group) $true;if($null -ne $seconds){$durations.Add([double]$seconds)}}
+        $video=@($files|Where-Object {$_.Name -match '^video(?:_\d+)?\.mp4$'})
+        if($video.Count){return Get-RecordedFilesSeconds $video $true}
         $audio=@($files|Where-Object {$_.Name -match '^audio(?:_\d+)?\.wav$'})
-        $seconds=Get-RecordedFilesSeconds $audio $false;if($null -ne $seconds){$durations.Add([double]$seconds)}
-        # Service continuations carry an explicit overall timeline, including gaps.
-        if(Test-Path -LiteralPath (Join-Path $Folder 'recording_parts.json')){
-          try{
-            $metadata=Get-Content -LiteralPath (Join-Path $Folder 'metadata.json') -Raw -Encoding UTF8 | ConvertFrom-Json
-            $value=0.0
-            if($metadata.RecordingServiceVersion -ge 37 -and [double]::TryParse([string]$metadata.DurationSeconds,[Globalization.NumberStyles]::Float,[Globalization.CultureInfo]::InvariantCulture,[ref]$value) -and $value -ge 0 -and -not [double]::IsInfinity($value) -and -not [double]::IsNaN($value)){$durations.Add($value)}
-          }catch{}
-        }
-        if($durations.Count){return ($durations|Measure-Object -Maximum).Maximum}
-        return $null
+        return Get-RecordedFilesSeconds $audio $false
     }catch{return $null}
 }

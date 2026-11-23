@@ -890,6 +890,11 @@ function Show-QualityError {
 # Toggle playback pause and synchronize the controls with the playback session.
 function Switch-QualityPause {
     param($State,[switch]$ExtractionPreview)
+    $broadcast=Get-ApplicationBroadcast
+    if(-not $ExtractionPreview -and $broadcast){Write-QualityDiagnostic $State ('pause-toggle target='+(-not $State.Paused)+' analyzerUnavailable='+$broadcast.AnalysisUnavailable+' analyzerEnabled='+$broadcast.Config.AnalyzerEnabled)}
+    if(-not $ExtractionPreview -and $broadcast -and ($broadcast.AnalysisHolding -or $broadcast.AnalysisArmed)){
+        Stop-AnalyzerPlayback;$broadcast.AnalysisArmed=$false;$broadcast.AnalysisHolding=$false;$State.Paused=$true;Update-QualityLabel $State;return
+    }
     if(-not $ExtractionPreview -and $State.Split -and $State.Split.Preview){
         if(-not $State.Paused -or $State.Split.Preview.Starting){return}
         # Starting the main player from a paused preview leaves preview mode.
@@ -902,9 +907,15 @@ function Switch-QualityPause {
         return
     }
     $targetPaused = -not $State.Paused
+    if(-not $targetPaused -and $broadcast -and $broadcast.Config.AnalyzerEnabled -and -not $broadcast.AnalysisUnavailable){
+        $broadcast.AnalysisArmed=$true;$broadcast.AnalysisHolding=$true
+        Update-QualityLabel $State
+        return
+    }
     if ($State.NativeMpv) {
         if (-not $State.Clock.SetPaused($targetPaused,2500)) { throw (Get-QualityText 'Player pause command timed out.' 'O leitor não confirmou o comando de pausa.') }
         $State.Paused=$targetPaused; $State.PauseToConfirm=$null; Update-QualityLabel $State
+        Update-AnalyzerPlayback $State
         return
     }
     [MachiningMonitor.QualityClock]::Pause($State.Handle)
@@ -2187,6 +2198,16 @@ function Update-QualityLabel {
         $s.PlaybackAction=$action
     }
     Update-PlaybackResizeNotice $s
+    $broadcast=Get-ApplicationBroadcast
+    if($broadcast -and $broadcast.PlaybackState -eq $s -and -not $s.Paused){
+        if(-not $broadcast.Config.AnalyzerEnabled -or $broadcast.AnalysisUnavailable -eq 'disabled'){$status=Get-QualityText 'Playing (AI analysis disabled)' 'A reproduzir (análise por IA desativada)'}
+        elseif($broadcast.AnalysisUnavailable -eq 'disconnected'){$status=Get-QualityText 'Playing (no connection to AI analysis)' 'A reproduzir (sem ligação à análise por IA)'}
+        elseif($broadcast.AnalysisId -and $broadcast.AnalysisId -ne [guid]::Empty){$status=Get-QualityText 'Playing (AI analysis in progress)' 'A reproduzir (análise por IA em curso)'}
+    }
+    if($broadcast -and $broadcast.Config.AnalyzerEnabled -and $broadcast.PlaybackState -eq $s -and -not $broadcast.AnalysisUnavailable){
+        if($broadcast.AnalysisHolding -or $broadcast.AnalysisArmed){$status=Get-QualityText 'Preparing analysis and audio...' 'A preparar análise e áudio...'}
+        elseif($broadcast.AnalysisFault){$status=(Get-QualityText 'Analysis paused: ' 'Análise pausada: ')+$broadcast.AnalysisFault}
+    }
     $s.Label.Text = '{0} | {1} ({2} s)' -f $status, [TimeSpan]::FromSeconds($position).ToString('hh\:mm\:ss\.fff'), $position.ToString('0.000',[Globalization.CultureInfo]::CurrentCulture)
     $s.TotalLabel.Text=(Get-QualityText 'Total time: ' 'Tempo total: ') + [TimeSpan]::FromSeconds($s.Duration).ToString('hh\:mm\:ss\.fff')
     $s.CurrentQualityLabel.Text='{0}: {1}' -f (Get-QualityText 'Rating' 'Classificação'),(Get-QualityDisplay ([int]$value))

@@ -45,7 +45,7 @@ function Get-RecordingAudioSegmentArguments {
     $delay=Get-RecordingAudioDelayFilter
     $clock=Get-RecordingCaptureAudioClockFilter
     $duration=$Seconds.ToString('0.########',[Globalization.CultureInfo]::InvariantCulture)
-    return @('-map',"${InputIndex}:a:0",'-c:a','pcm_s16le','-filter:a',"$clock,volume=$Gain$delay",'-f','segment','-segment_time',$duration,'-segment_time_delta','0','-reset_timestamps','1','-segment_list_type','csv','-segment_list',(Join-Path $Folder 'audio_segments.csv'),(Join-Path $Folder 'audio_%06d.wav'))
+    return @('-map',"${InputIndex}:a:0",'-c:a','pcm_s16le','-filter:a',"$clock,volume=$Gain$delay",'-f','segment','-segment_time',$duration,'-reset_timestamps','1','-segment_list_type','csv','-segment_list',(Join-Path $Folder 'audio_segments.csv'),(Join-Path $Folder 'audio_%06d.wav'))
 }
 function Set-RecordingExternalAudioInput {
     param([object[]]$Items,$Source,[int]$BufferMilliseconds=0)

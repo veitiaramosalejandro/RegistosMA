@@ -184,6 +184,9 @@ function Start-MpvPlayback {
     param($Context,[double]$Seconds,[bool]$Paused)
     Initialize-MpvController
     $session=@{Player=$null; Producer=$null; Copy=$null; InputClosed=$false; BaseSeconds=$Seconds; Controller=$null; Embedded=$true; LogPath=$null;ProducerErrors=$null;ProducerLogPath=$null}
+    $broadcast=Get-ApplicationBroadcast
+    $session.AnalysisAutoStart=$broadcast -and $broadcast.Config.AnalyzerEnabled -and $broadcast.Session -and -not $Paused
+    if($session.AnalysisAutoStart){$Paused=$true}
     try {
         $items=@($Context.ProducerItems)
         if ($Context.Direct) {
@@ -226,8 +229,11 @@ function Attach-MpvPlayback {
     $State.BaseSeconds=$Session.BaseSeconds; $State.Handle=$State.VideoHost.Handle
     $State.Embedded=$true; $State.Paused=$Paused; $State.RestorePaused=$false; $State.Ended=$false
     $State.NativeMpv=$true
+    $broadcast=Get-ApplicationBroadcast
+    if($broadcast){$broadcast.AnalysisUnavailable=''}
+    if($Session.AnalysisAutoStart -and $broadcast){$State.Paused=$true;$broadcast.AnalysisArmed=$true;$broadcast.AnalysisHolding=$true}
     $State.AppliedPlotLayout=$State.Context.NativePlotKey; $State.PendingPlotLayout=$null
-    $State.PauseToConfirm=$Paused
+    $State.PauseToConfirm=$State.Paused
     foreach ($button in $State.Buttons) { $button.Enabled=$false }
     $State.Slider.Enabled=$false
 }

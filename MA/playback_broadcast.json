@@ -1,5 +1,8 @@
 ﻿{
-    "Version":  2,
+    "Version":  5,
+    "MachineId":  "7d084d9e-ecd6-40e8-b14b-ee11607e564e",
+    "ServiceApiKeyProtected":  "AQAAANCMnd8BFdERjHoAwE/Cl+sBAAAAy2DigOeN20Gi/f4pcTd5wQAAAAACAAAAAAAQZgAAAAEAACAAAAAKMSCA/B8kCib5kpqNdHNF0XJBXn/RcHGxOlLBS8DFAwAAAAAOgAAAAAIAACAAAAA83xQW3sZ8MGb4bu304Z2uALWpIX3byliqCaMMVGvlFVAAAAA6emDc5ZOi0Qn3IFYp693UVcS4oO66QRUKJaEEOYbvCcuK8IB8Fk7g34lx+/Q2a+2Hcro7XhGYKdaJJEo5XKuTVoIhN4XiALoVw+y79jtna0AAAAAc9KScXWqpcEXSFJjHSxBxBBoKZSItSSYGhqklx5KkC9ho8EZKae+GlgRLmuPCr/Zs/hI8pyFssUmNEJK0ik5k",
+    "ServiceCertificateSha256":  "",
     "Enabled":  true,
     "Address":  "127.0.0.1",
     "Port":  8555,
@@ -7,5 +10,8 @@
     "Bitrate":  192,
     "AuthEnabled":  true,
     "Username":  "admin",
-    "PasswordHash":  "sha256:CH6x2gg2qUtpMwBdUlR67zjPrM/kvr1GOaxD4vAoptU="
+    "PasswordHash":  "sha256:CH6x2gg2qUtpMwBdUlR67zjPrM/kvr1GOaxD4vAoptU=",
+    "AnalyzerEnabled":  true,
+    "AnalyzerHost":  "localhost",
+    "AnalyzerPort":  7243
 }
